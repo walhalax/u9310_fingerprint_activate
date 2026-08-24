@@ -1,0 +1,23 @@
+# OS / editor / VCS
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Secrets — never commit
+.env
+.env.local
+env
+secrets/
+
+# Build artifacts
+/usr/local/src/lifebook-libfprint-installer/
+
+# Backups created by setup
+*.bak.*
+*.bak
+
+# Logs
+*.log
