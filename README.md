@@ -1,23 +1,23 @@
 # u9310_fingerprint_activate
 
-Fujitsu LIFEBOOK U9310 シリーズ (U9311 / U9312 を含む) の **NB-2033-U 指紋センサー** を Ubuntu 24.04+ で使えるようにする、単一目的のセットアップスクリプトです。
+A single-purpose setup script to enable the **NB-2033-U fingerprint sensor** on Fujitsu LIFEBOOK U9310 series (including U9311 / U9312) on Ubuntu 24.04+.
 
-## 対象環境
+## Supported environments
 
 - Ubuntu 24.04 / 24.10 / 25.04 / 26.04 (resolute)
-- 搭載指紋センサー: NEXT Biometrics **NB-2033-U** (USB ID `298d:2033`)
-- 確認コマンド: `lsusb | grep "298d:2033"`
+- Sensor: NEXT Biometrics **NB-2033-U** (USB ID `298d:2033`)
+- Verify: `lsusb | grep "298d:2033"`
 
-## 含まれるステップ
+## Steps
 
-| ステップ | 内容 |
+| Step | Description |
 |---|---|
-| `fingerprint` | fprintd + libfprint (MR !574) をビルドし `/usr/local` にインストール |
-| `pam` | `/etc/pam.d/gdm-password` に `pam_fprintd.so` を挿入、`gsettings` の `show-fingerprint` を有効化 |
+| `fingerprint` | Builds fprintd + libfprint (MR !574) and installs to `/usr/local` |
+| `pam` | Inserts `pam_fprintd.so` into `/etc/pam.d/gdm-password` and enables `show-fingerprint` in gsettings |
 
-> このリポジトリは指紋セットアップ **だけ** に絞っています。apt upgrade / PPA 追加 / Tailscale / crush 等の周辺セットアップは別リポジトリで扱う想定です。
+> This repository focuses **only** on fingerprint setup. Surrounding setup (apt upgrade / PPA / Tailscale / crush) lives in separate repositories.
 
-## 使い方
+## Usage
 
 ```sh
 git clone https://github.com/walhalax/u9310_fingerprint_activate.git
@@ -25,49 +25,51 @@ cd u9310_fingerprint_activate
 sudo ./setup.sh --yes
 ```
 
-実行後の流れ:
+After running:
 
-1. **指紋を登録**: Settings → Users → 自分のユーザー → Fingerprint → 「+」→ 5回スキャン
-2. **GDM ログイン画面でテスト**: ログアウト後、サインイン画面で「Place finger」表示が出るか確認
+1. **Enroll a fingerprint**: Settings → Users → your user → Fingerprint → "+" → 5 scans
+2. **Test on GDM**: log out and check that "Place finger" appears on the sign-in screen
 
-### ステップ指定
+### Step selection
 
 ```sh
-# ライブラリだけ先にビルド
 sudo ./setup.sh --only fingerprint --yes
-
-# PAM をあとで設定
 sudo ./setup.sh --only pam --yes
-
-# ドライラン (実際には変更しない)
 sudo ./setup.sh --dry-run
 ```
 
-### アンインストール
+### Uninstallation
 
 ```sh
 sudo ./uninstall.sh --yes
 ```
 
-## 何をしているか(技術詳細)
+## Technical details
 
-- `libfprint` 公式は NB-2033-U 未対応。MR !574 のレビュー中パッチを取り込んだフォークを `/usr/local` にビルド・配置 → 既存 apt 版と共存(`/usr/local/lib` が優先されるため `fprintd` が自家版を掴む)
-- `fprintd` はフォーク版 libfprint を自動ロードし、`nb2033` ドライバでデバイスを開く
-- `/etc/pam.d/gdm-password` の `@include common-auth` の前に `auth sufficient pam_fprintd.so` を挿入 → 指紋成功で即ログイン、失敗時は password にフォールバック
-- gsettings `org.gnome.control-center.user-accounts show-fingerprint` を `true` にして GNOME 設定画面に指紋メニューを表示
+- Official `libfprint` does not yet support NB-2033-U. This script builds and installs the MR !574 fork (in review) to `/usr/local` — it coexists with the apt version (`/usr/local/lib` takes precedence, so `fprintd` loads the custom build)
+- `fprintd` auto-loads the fork libfprint and opens the device with the `nb2033` driver
+- The script inserts `auth sufficient pam_fprintd.so` before `@include common-auth` in `/etc/pam.d/gdm-password` → fingerprint success logs in immediately; failure falls back to password
+- gsettings `org.gnome.control-center.user-accounts show-fingerprint` is set to `true` so the GNOME settings panel shows the fingerprint menu
 
-## 設計方針
+## Multilingual documentation
 
-- **単一目的**: 指紋セットアップだけに絞り、責務を明確化
-- **冪等性**: 各ステップは何度実行しても副作用が出ない
-- **DRY-RUN**: `--dry-run` で全工程をプレビュー
-- **部分巻き戻し**: `uninstall.sh --only fingerprint` 等でピンポイント復元
+- 🇯🇵 [日本語 (Japanese)](README.ja.md)
+- 🇪🇸 [Español (Spanish)](README.es.md)
+- 🇨🇳 [中文 (Simplified Chinese)](README.zh.md)
+- 🇰🇷 [한국어 (Korean)](README.ko.md)
 
-## ライセンス
+## Design principles
+
+- **Single purpose**: focus exclusively on fingerprint setup
+- **Idempotent**: each step can run multiple times without side effects
+- **DRY-RUN**: preview the full workflow with `--dry-run`
+- **Granular rollback**: `uninstall.sh --only fingerprint` for precise per-step revert
+
+## License
 
 MIT
 
-## 関連リンク
+## Related links
 
 - lifebook-libfprint-installer: https://github.com/suikan4github/lifebook-libfprint-installer
 - libfprint MR !574 (NB-2033-U): https://gitlab.freedesktop.org/libfprint/libfprint/-/merge_requests/574
