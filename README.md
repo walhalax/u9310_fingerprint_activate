@@ -1,6 +1,6 @@
 # u9310_fingerprint_activate
 
-Lifebook U9300 / U9311 / U9312 を Ubuntu 24.04+ で初期セットアップするための再現性あるセットアップスクリプト集。
+Lifebook U9300 / U9311 / U9312 を Ubuntu 24.04+ でfingerprint unit 初期セットアップするための再現性あるセットアップスクリプト集。
 
 ## 含まれる内容
 
