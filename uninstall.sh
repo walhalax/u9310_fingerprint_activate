@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# uninstall.sh — セットアップで行った変更を巻き戻す
-# ステップごとに個別実行可能: ./uninstall.sh --only fingerprint
+# uninstall.sh — setup.sh で行った指紋セットアップ変更を巻き戻す
 
 set -Eeuo pipefail
 
@@ -13,14 +12,9 @@ usage() {
 Usage: $0 [--only STEP[,STEP]] [--yes]
 
 Steps:
-  apt         Phased-updates drop-in を削除
-  ppa         追加した PPA を削除
-  fingerprint libfprint (MR !574) ビルド成果物を削除し、fprintd 再起動
-  pam         /etc/pam.d/gdm-password の pam_fprintd.so 行を削除
-  crush       ~/.config/crush/crushrc と ~/crush/setting.md を削除 (任意)
-  tailscale   Tailscale をログアウト + パッケージ削除
+  fingerprint libfprint (MR !574) ビルド成果物を削除し、fprintd を再起動
+  pam         /etc/pam.d/gdm-password の pam_fprintd.so 行を削除 + gsettings を既定に戻す
   all         上記すべて
-
 EOF
 }
 
@@ -38,23 +32,15 @@ main() {
   [[ $EUID -ne 0 ]] && die "Must be root"
 
   local steps=("${only[@]:-all}")
-  [[ -z "$only" ]] && steps=(apt ppa fingerprint pam crush tailscale)
+  [[ -z "$only" ]] && steps=(fingerprint pam)
 
   for step in "${steps[@]}"; do
     case "$step" in
-      apt)
-        rm -f /etc/apt/apt.conf.d/99no-phased-updates
-        ok "removed phased-updates drop-in"
-        ;;
-      ppa)
-        rm -f /etc/apt/sources.list.d/{brave-browser-release,vscodium,nodesource,charm}.list
-        rm -f /etc/apt/keyrings/{brave-browser-release,vscodium,nodesource,charm}.{gpg,asc}
-        ok "removed extra PPAs"
-        ;;
       fingerprint)
         if [[ -d /usr/local/src/lifebook-libfprint-installer/libfprint/builddir ]]; then
+          log "Running ninja uninstall"
           ( cd /usr/local/src/lifebook-libfprint-installer/libfprint && \
-            ninja -C builddir uninstall )
+            ninja -C builddir uninstall ) || true
         fi
         rm -f /usr/local/lib/x86_64-linux-gnu/libfprint-2.so*
         rm -f /usr/local/lib/fprint-2/*
@@ -67,15 +53,12 @@ main() {
           sed -i '/^auth    sufficient      pam_fprintd.so$/d' /etc/pam.d/gdm-password
           ok "removed pam_fprintd.so line"
         fi
-        ;;
-      crush)
-        rm -f "$HOME/.config/crush/crushrc" "$HOME/crush/setting.md"
-        ok "removed crush globals"
-        ;;
-      tailscale)
-        tailscale logout 2>/dev/null || true
-        apt-get remove -y tailscale || true
-        ok "tailscale removed"
+        local user="${SUDO_USER:-}"
+        if [[ -n "$user" ]] && command -v gsettings >/dev/null 2>&1; then
+          sudo -u "$user" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u "$user")/bus" \
+            gsettings reset org.gnome.control-center.user-accounts show-fingerprint 2>/dev/null || true
+        fi
+        ok "reset show-fingerprint gsettings"
         ;;
       all) ;;
       *) die "Unknown step: $step" ;;
