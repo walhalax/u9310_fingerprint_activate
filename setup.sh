@@ -17,7 +17,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
-readonly VERSION="0.2.0"
+readonly VERSION="0.3.0"
 export SETUP_VERSION="$VERSION"
 
 # shellcheck source=lib/common.sh
@@ -32,7 +32,7 @@ readonly STEPS=(fingerprint pam)
 step_descriptions() {
   cat <<EOF
 fingerprint  fprintd + libfprint (MR !574) ビルド + /usr/local にインストール
-pam          /etc/pam.d/gdm-password に pam_fprintd.so 挿入 + gsettings show-fingerprint 有効化
+pam          /etc/pam.d/gdm-password に pam_fprintd.so を [success=1 default=ignore] で挿入 + gsettings show-fingerprint 有効化
 EOF
 }
 

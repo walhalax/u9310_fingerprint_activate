@@ -50,8 +50,10 @@ main() {
         ;;
       pam)
         if [[ -f /etc/pam.d/gdm-password ]]; then
-          sed -i '/^auth    sufficient      pam_fprintd.so$/d' /etc/pam.d/gdm-password
-          ok "removed pam_fprintd.so line"
+          # 新形式と旧 sufficient 行の両方を削除
+          sed -i '/^auth    \[success=1 default=ignore\] pam_fprintd\.so$/d' /etc/pam.d/gdm-password
+          sed -i '/^auth    sufficient      pam_fprintd\.so$/d' /etc/pam.d/gdm-password
+          ok "removed pam_fprintd.so line(s)"
         fi
         local user="${SUDO_USER:-}"
         if [[ -n "$user" ]] && command -v gsettings >/dev/null 2>&1; then
